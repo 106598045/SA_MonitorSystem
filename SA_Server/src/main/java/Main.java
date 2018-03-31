@@ -18,7 +18,6 @@ public class Main {
                     try {
                         DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
                         clientOutputStreams.add(dos);
-                        dos.writeUTF("與server連結成功");
                         Thread thread = new Thread(threadGroup,new ClientRequireHandler(clientSocket , clientOutputStreams));
                         thread.start();
                         System.out.println("目前共:"+threadGroup.activeCount()+"個請求");

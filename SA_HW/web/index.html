@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title></title>
+    <style>
+        tr.title{
+            background-color: rgb(154, 149, 146);
+            color: rgb(221, 218, 210);
+        }
+        tr.data{
+            background-color:gainsboro;
+        }
+
+        .btn{
+            width: 60px;
+            height: 30px;
+        }
+
+        .status_ok{
+            color:white;
+            background-color:green;
+        }
+        .status_error{
+            color:white;
+            background-color:red;
+        }
+
+    </style>
+    <script>
+        function setNewHost(){
+            var hostIp = document.getElementById('hostIp').value;
+            var hostName = document.getElementById('hostName').value;
+            $.ajax({
+                type: "Get",
+                url: "/EditHostServlet",
+                data:{
+                    "name":hostName,
+                    "ip":hostIp,
+                    "action":"create"
+                },
+                success: function (data) {
+                    getMonitor(false);
+                },
+                error: function () {
+                    alert('add failure');
+                }
+            });
+        }
+
+        function deleteHost(ip){
+            $.ajax({
+                type: "Get",
+                url: "/EditHostServlet",
+                data:{
+                    "ip":ip,
+                    "action":"delete"
+                },
+                success: function (data) {
+                    getMonitor(false);
+                },
+                error: function () {
+                    alert('delete failure');
+                }
+            });
+        }
+
+        function getMonitor(isContinue) {
+            $.ajax({
+                type: "POST",
+                url: "/MonitorServlet",
+                dataType:"json",
+                success: function (data) {
+                    var datalist = data["result"];
+                    var HTML = "<tr class = \"title\"><td>Host Name</td><td>IP/DN</td><td>Status</td><td>Last Check</td><td>delete</td>></tr>";
+                    for(index in datalist){
+                        HTML += "<tr class = \"data\">";
+                        HTML += "<td>"+datalist[index]["hostName"]+"</td>";
+                        HTML += "<td>"+datalist[index]["hostIp"]+"</td>";
+                        HTML += "<td class='status_"+((datalist[index]["status"] == "OK")?"ok":"error")+"'>"+datalist[index]["status"]+"</td>";
+                        HTML += "<td>"+datalist[index]["lastCheck"]+"</td>";
+                        HTML += "<td><button id='deleteBtn' onclick='deleteHost(\""+datalist[index]["hostIp"]+"\")' class=\"btn\">刪除</button></td>";
+                        HTML += "</tr>";
+                        console.log(datalist[index]);
+                    }
+                    $('table').html(HTML);
+                    console.log(isContinue);
+                    if(isContinue) setTimeout(function(){ getMonitor(true); }, 3000);
+                },
+                error: function () {
+                    alert('monitor failure');
+                }
+            });
+        }
+
+        window.onload = function(){
+            document.getElementById("creatHost").onclick = function() {setNewHost()};
+            getMonitor(true);
+        };
+
+    </script>
+</head>
+<body>
+host name:<input type="text" id="hostName" placeholder="name">
+ip:<input type="text" id="hostIp" placeholder="IP address">
+<button id="creatHost" class="btn">新增</button>
+<table id="hostTable "></table>
+<script type="text/javascript" src="./js/jquery-3.3.1.min.js"></script>
+</body>
+</html>

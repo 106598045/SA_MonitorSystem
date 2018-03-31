@@ -2,6 +2,7 @@ package controller;
 
 import bean.Monitor;
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.DataInputStream;
@@ -15,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class ClientRequireHandler implements Runnable {
-    DataInputStream dis;//宣告一個讀取Client傳送過來的字串物件
+    DataInputStream dis;
     ArrayList<DataOutputStream> clientOutputStreams = new ArrayList<DataOutputStream>();
     Gson gson = new Gson();
     protected Socket clientSocket;
@@ -30,46 +31,39 @@ public class ClientRequireHandler implements Runnable {
         }
     }
 
+    //EOFException 段開連線問題
     public void run() {
         try {
             while (true) {
                 if(this.clientSocket.isClosed()) return;
                 String msg = dis.readUTF();
-                System.out.println(msg);
                 Map<String,String> map = new HashMap<String,String>();
                 Map<String,String> clientMsg = (Map<String,String>) gson.fromJson(msg, map.getClass());
                 String response ="";
-                if(clientMsg.get("action").equals("monitor")){
-                    //{"action":"monitor"}
+                String action = clientMsg.get("action");
+                if(action.equals("monitor")){
                     MonitorServlet monitorServlet = new MonitorServlet();
                     response =  monitorServlet.Monitoing();
-                }else if(clientMsg.get("action").equals("create") || clientMsg.get("action").equals("delete")){
-                    //未完成
-                    //{"action":"create","info":{"hostIp":"140.124.1.1","hostName":"test"}}
-                    //{"action":"delete","info":{"hostIp":"140.124.1.1"}}
+                }else if(action.equals("create") ||action.equals("delete")){
                     EditHostServlet editHostServlet = new EditHostServlet();
-                    System.out.println(clientMsg.get("info"));
-                    //editHostServlet.Edit();
+                    response = editHostServlet.Edit(action,clientMsg.get("hostIp"),clientMsg.get("hostName"));
                 }
-                broadCast(response);
+                sendMsgToClient(response);
             }
         } catch (IOException e) {
             System.out.println("run : "+e.toString());
         }
     }
 
-    public void broadCast(String message) {
+    public void sendMsgToClient(String message) {
         DataOutputStream writer = null;
-        Iterator<DataOutputStream> it = clientOutputStreams.iterator();
-        while (it.hasNext()) {
-            try {
-                writer = it.next();
-                writer.writeUTF(message);//將資料寫出
-                writer.flush();//清空資料串流。
-            } catch (Exception e) {
-                System.out.println("broadCast : "+e.toString());
-                clientOutputStreams.remove(writer);
-            }
+        try {
+            writer = new DataOutputStream(clientSocket.getOutputStream());
+            writer.writeUTF(message);
+            writer.flush();
+        } catch (Exception e) {
+            System.out.println("broadCast : "+e.toString());
+            clientOutputStreams.remove(writer);
         }
     }
 }
