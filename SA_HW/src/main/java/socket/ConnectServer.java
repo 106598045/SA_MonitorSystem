@@ -1,7 +1,5 @@
 package socket;
 
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
-
 import java.io.*;
 import java.net.Socket;
 
@@ -11,7 +9,7 @@ import java.net.Socket;
 public class ConnectServer {
     Socket con;
     String responseMsg;
-    public ConnectServer(String ip,int port){
+    public ConnectServer(String ip, int port){
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             con = new Socket(ip, port);
